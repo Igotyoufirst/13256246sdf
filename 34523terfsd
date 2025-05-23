@@ -1,15 +1,15 @@
 local RagebotUI = {}
+RagebotUI.__index = RagebotUI
 
--- Utility function: Download and load custom font
+-- Load Font Utility
 local function loadFont()
-    -- Download font file once if needed
     if not isfile("smallest_pixel.ttf") then
         local success, msg = pcall(function()
             writefile("smallest_pixel.ttf", game:HttpGet("https://github.com/Igotyoufirst/proggyclean/raw/refs/heads/main/ProggyClean.ttf"))
         end)
         if not success then
             warn("Failed to download font: " .. tostring(msg))
-            return Enum.Font.SourceSans -- fallback font
+            return Enum.Font.SourceSans -- fallback
         end
     end
 
@@ -25,15 +25,16 @@ local function loadFont()
         }
     }
 
-    -- Save font face info as json
     writefile("fontface.font", game:GetService("HttpService"):JSONEncode(smallest_pixel_obj))
 
-    -- Create and return Font object
     return Font.new(getcustomasset("fontface.font"), Enum.FontWeight.Light)
 end
 
+-- Constructor
 function RagebotUI.new()
-    local font = loadFont()
+    local self = setmetatable({}, RagebotUI)
+
+    self.font = loadFont()
 
     -- Create main ScreenGui
     local ragebot = Instance.new("ScreenGui")
@@ -47,12 +48,12 @@ function RagebotUI.new()
     MainAccent.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
     MainAccent.AnchorPoint = Vector2.new(0.5, 0.5)
     MainAccent.Size = UDim2.new(0, 201, 0, 140)
-    MainAccent.Position = UDim2.new(0.50046, 0, 0.5, 0)
+    MainAccent.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainAccent.BorderColor3 = Color3.fromRGB(0, 0, 0)
 
     local MainAccent_UIStroke = Instance.new("UIStroke", MainAccent)
 
-    -- secondmain
+    -- secondmain Frame
     local secondmain = Instance.new("Frame", MainAccent)
     secondmain.Name = "secondmain"
     secondmain.BorderSizePixel = 0
@@ -97,270 +98,317 @@ function RagebotUI.new()
     local holder_UIStroke = Instance.new("UIStroke", holder)
     holder_UIStroke.Color = Color3.fromRGB(43, 43, 43)
 
-    -- accentstripe
-    local accentstripe = Instance.new("Frame", holder)
-    accentstripe.Name = "accent stripe"
-    accentstripe.BackgroundColor3 = Color3.fromRGB(74, 84, 122)
-    accentstripe.Size = UDim2.new(1, -2, 0, 2)
-    accentstripe.Position = UDim2.new(0, 1, 0, 1)
-    accentstripe.BorderColor3 = Color3.fromRGB(0, 0, 0)
-
     local holder_UIGradient = Instance.new("UIGradient", holder)
     holder_UIGradient.Rotation = -90
-    holder_UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.fromRGB(103, 103, 103)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))}
+    holder_UIGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(103, 103, 103)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
 
     -- Title label
     local Title = Instance.new("TextLabel", holder)
     Title.Name = "Title"
     Title.Text = "biteme.club"
     Title.TextSize = 12
-    Title.FontFace = font
+    Title.FontFace = self.font
     Title.TextColor3 = Color3.fromRGB(140, 140, 140)
     Title.BackgroundTransparency = 1
     Title.TextStrokeTransparency = 0
     Title.BorderSizePixel = 0
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Title.Size = UDim2.new(0, 200, 0, 50)
-    Title.Position = UDim2.new(0, -8, 0, -45)
-    Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Title.Size = UDim2.new(1, 0, 0, 18)
+    Title.Position = UDim2.new(0, 0, 0, -22)
 
-    -- Holder frame (container)
+    -- Holder frame (container for toggles/sliders)
     local Holder = Instance.new("Frame", holder)
     Holder.Name = "Holder"
     Holder.BorderSizePixel = 0
-    Holder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Holder.Size = UDim2.new(1, 0, 1, 0)
-    Holder.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Holder.BackgroundTransparency = 1
+    Holder.Size = UDim2.new(1, 0, 1, 0)
+    Holder.Position = UDim2.new(0, 0, 0, 0)
 
     -- UIListLayout inside Holder
     local UILayout = Instance.new("UIListLayout", Holder)
-    UILayout.Padding = UDim.new(0, 10)
+    UILayout.Padding = UDim.new(0, 8)
     UILayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-    -- Define "toggleholder1" with "untoggled" state
-    local toggleholder1 = Instance.new("Frame", Holder)
-    toggleholder1.Name = "toggleholder"
-    toggleholder1.BorderSizePixel = 0
-    toggleholder1.BackgroundTransparency = 1
-    toggleholder1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    toggleholder1.Size = UDim2.new(0, 10, 0, 10)
-    toggleholder1.Position = UDim2.new(0, 5, 0, 10)
-    toggleholder1.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    self.GUI = ragebot
+    self.MainAccent = MainAccent
+    self.holder = Holder
+    self.items = {} -- store toggles and sliders here
 
-    local untoggled = Instance.new("Frame", toggleholder1)
-    untoggled.Name = "untoggled"
-    untoggled.BackgroundColor3 = Color3.fromRGB(44, 44, 44)
-    untoggled.Size = UDim2.new(0, 10, 0, 10)
-    untoggled.Position = UDim2.new(0, 10, 0, 15)
-    untoggled.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    return self
+end
 
-    local untoggled_info = Instance.new("TextLabel", untoggled)
-    untoggled_info.Name = "info"
-    untoggled_info.Text = "toggled off"
-    untoggled_info.TextSize = 12
-    untoggled_info.FontFace = font
-    untoggled_info.TextColor3 = Color3.fromRGB(140, 140, 140)
-    untoggled_info.BackgroundTransparency = 1
-    untoggled_info.BorderSizePixel = 0
-    untoggled_info.TextXAlignment = Enum.TextXAlignment.Left
-    untoggled_info.TextStrokeTransparency = 0
-    untoggled_info.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    untoggled_info.Size = UDim2.new(0, 0, 0, 10)
-    untoggled_info.Position = UDim2.new(0, 15, 0, 0)
-    untoggled_info.ZIndex = 2
-    untoggled_info.BorderColor3 = Color3.fromRGB(0, 0, 0)
+-- Helper function: create a TextLabel with basic properties
+local function newLabel(text, fontFace, textColor, textSize, size)
+    local label = Instance.new("TextLabel")
+    label.BackgroundTransparency = 1
+    label.Text = text or ""
+    label.FontFace = fontFace
+    label.TextColor3 = textColor or Color3.fromRGB(140, 140, 140)
+    label.TextSize = textSize or 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Size = size or UDim2.new(0, 150, 0, 14)
+    label.BorderSizePixel = 0
+    label.TextStrokeTransparency = 1
+    return label
+end
 
-    local untoggled_UIGradient = Instance.new("UIGradient", untoggled)
-    untoggled_UIGradient.Rotation = -90
-    untoggled_UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+-- Create Toggle UI component
+function RagebotUI:CreateToggle(labelText, initialState, callback)
+    assert(type(labelText) == "string", "labelText must be a string")
+    assert(type(initialState) == "boolean", "initialState must be a boolean")
+    assert(type(callback) == "function" or callback == nil, "callback must be a function or nil")
+
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Name = "Toggle"
+    toggleFrame.Size = UDim2.new(1, 0, 0, 24)
+    toggleFrame.BackgroundTransparency = 1
+
+    -- Label
+    local label = newLabel(labelText, self.font, Color3.fromRGB(200, 200, 200), 14, UDim2.new(1, -40, 1, 0))
+    label.Parent = toggleFrame
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Position = UDim2.new(0, 4, 0, 0)
+
+    -- Toggle button frame
+    local toggleBtn = Instance.new("Frame")
+    toggleBtn.Name = "ToggleBtn"
+    toggleBtn.Size = UDim2.new(0, 28, 0, 16)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(44, 44, 44)
+    toggleBtn.Position = UDim2.new(1, -34, 0, 4)
+    toggleBtn.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    toggleBtn.Parent = toggleFrame
+    toggleBtn.ClipsDescendants = true
+    toggleBtn.SelectionImageObject = nil
+
+    local uiStroke = Instance.new("UIStroke", toggleBtn)
+    uiStroke.Color = Color3.fromRGB(59, 59, 95)
+
+    local toggleCircle = Instance.new("Frame")
+    toggleCircle.Name = "Circle"
+    toggleCircle.Size = UDim2.new(0, 12, 0, 12)
+    toggleCircle.Position = initialState and UDim2.new(1, -14, 0, 2) or UDim2.new(0, 2, 0, 2)
+    toggleCircle.BackgroundColor3 = initialState and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(85, 85, 85)
+    toggleCircle.BorderSizePixel = 0
+    toggleCircle.AnchorPoint = Vector2.new(0, 0)
+    toggleCircle.Parent = toggleBtn
+    toggleCircle.ZIndex = 2
+    toggleCircle.Visible = true
+    toggleCircle.ClipsDescendants = false
+    toggleCircle:SetAttribute("toggled", initialState)
+
+    local uicorner = Instance.new("UICorner")
+    uicorner.CornerRadius = UDim.new(1,0)
+    uicorner.Parent = toggleCircle
+
+    -- Click handler
+    toggleBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local toggled = toggleCircle:GetAttribute("toggled")
+            toggled = not toggled
+            toggleCircle:SetAttribute("toggled", toggled)
+            
+            if toggled then
+                toggleCircle.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
+                toggleCircle:TweenPosition(UDim2.new(1, -14, 0, 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+            else
+                toggleCircle.BackgroundColor3 = Color3.fromRGB(85, 85, 85)
+                toggleCircle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+            end
+
+            if callback then
+                callback(toggled)
+            end
+        end
+    end)
+
+    self.holder.Size = self.holder.Size + UDim2.new(0, 0, 0, 24)
+    toggleFrame.Parent = self.holder
+
+    local item = {
+        Frame = toggleFrame,
+        Enabled = initialState,
+        Set = function(self, state)
+            state = not not state
+            toggleCircle:SetAttribute("toggled", state)
+            if state then
+                toggleCircle.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
+                toggleCircle.Position = UDim2.new(1, -14, 0, 2)
+            else
+                toggleCircle.BackgroundColor3 = Color3.fromRGB(85, 85, 85)
+                toggleCircle.Position = UDim2.new(0, 2, 0, 2)
+            end
+            self.Enabled = state
+        end,
+        Get = function(self) 
+            return toggleCircle:GetAttribute("toggled") 
+        end,
+        ToggleCallback = callback,
     }
 
-    -- Define "toggleholder2" with "toggled" state
-    local toggleholder2 = Instance.new("Frame", Holder)
-    toggleholder2.Name = "toggleholder"
-    toggleholder2.BorderSizePixel = 0
-    toggleholder2.BackgroundTransparency = 1
-    toggleholder2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    toggleholder2.Size = UDim2.new(0, 10, 0, 10)
-    toggleholder2.Position = UDim2.new(0, 5, 0, 10)
-    toggleholder2.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    table.insert(self.items, item)
+    return item
+end
 
-    local toggled = Instance.new("Frame", toggleholder2)
-    toggled.Name = "toggled"
-    toggled.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
-    toggled.Size = UDim2.new(0, 10, 0, 10)
-    toggled.Position = UDim2.new(0, 10, 0, 15)
-    toggled.BorderColor3 = Color3.fromRGB(0, 0, 0)
+-- Create Slider UI component
+function RagebotUI:CreateSlider(labelText, min, max, initialValue, callback)
+    assert(type(labelText) == "string", "labelText must be a string")
+    assert(type(min) == "number", "min must be a number")
+    assert(type(max) == "number", "max must be a number")
+    assert(type(initialValue) == "number", "initialValue must be a number")
+    assert(type(callback) == "function" or callback == nil, "callback must be a function or nil")
+    assert(min < max, "min must be less than max")
 
-    local toggled_info = Instance.new("TextLabel", toggled)
-    toggled_info.Name = "info"
-    toggled_info.Text = "toggled on"
-    toggled_info.TextSize = 12
-    toggled_info.FontFace = font
-    toggled_info.TextColor3 = Color3.fromRGB(173, 173, 173)
-    toggled_info.BackgroundTransparency = 1
-    toggled_info.BorderSizePixel = 0
-    toggled_info.TextXAlignment = Enum.TextXAlignment.Left
-    toggled_info.TextStrokeTransparency = 0
-    toggled_info.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    toggled_info.Size = UDim2.new(0, 0, 0, 10)
-    toggled_info.Position = UDim2.new(0, 15, 0, 0)
-    toggled_info.ZIndex = 2
-    toggled_info.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Name = "Slider"
+    sliderFrame.Size = UDim2.new(1, 0, 0, 28)
+    sliderFrame.BackgroundTransparency = 1
 
-    local toggled_UIGradient = Instance.new("UIGradient", toggled)
-    toggled_UIGradient.Rotation = -90
-    toggled_UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    -- Label
+    local label = newLabel(labelText, self.font, Color3.fromRGB(200,200,200), 14, UDim2.new(1, -60, 0, 14))
+    label.Parent = sliderFrame
+    label.Position = UDim2.new(0, 4, 0, 2)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Value Text
+    local valueText = Instance.new("TextLabel")
+    valueText.Name = "ValueText"
+    valueText.BackgroundTransparency = 1
+    valueText.FontFace = self.font
+    valueText.TextColor3 = Color3.fromRGB(140, 140, 140)
+    valueText.TextSize = 14
+    valueText.Size = UDim2.new(0, 50, 0, 14)
+    valueText.Position = UDim2.new(1, -52, 0, 2)
+    valueText.TextXAlignment = Enum.TextXAlignment.Right
+    valueText.Text = tostring(math.floor(initialValue * 100) / 100)
+    valueText.Parent = sliderFrame
+
+    -- Slider Bar Background
+    local sliderBarBg = Instance.new("Frame")
+    sliderBarBg.Name = "SliderBarBg"
+    sliderBarBg.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+    sliderBarBg.BorderColor3 = Color3.fromRGB(0,0,0)
+    sliderBarBg.Size = UDim2.new(1, -60, 0, 6)
+    sliderBarBg.Position = UDim2.new(0, 4, 0, 22)
+    sliderBarBg.Parent = sliderFrame
+
+    local bgGradient = Instance.new("UIGradient", sliderBarBg)
+    bgGradient.Rotation = -90
+    bgGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(174,174,174)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
     }
 
-    -- Slider frame
-    local slider = Instance.new("Frame", Holder)
-    slider.Name = "slider"
-    slider.BorderSizePixel = 0
-    slider.BackgroundTransparency = 1
-    slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    slider.Size = UDim2.new(1, 0, 0, 10)
-    slider.Position = UDim2.new(0, 5, 0, 10)
-    slider.BorderColor3 = Color3.fromRGB(0, 0, 0)
-
-    local sliderbg = Instance.new("Frame", slider)
-    sliderbg.Name = "sliderbg"
-    sliderbg.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-    sliderbg.Size = UDim2.new(1, -20, 0, 10)
-    sliderbg.Position = UDim2.new(0, 10, 0, 15)
-    sliderbg.BorderColor3 = Color3.fromRGB(0, 0, 0)
-
-    local sliderbg_UIGradient = Instance.new("UIGradient", sliderbg)
-    sliderbg_UIGradient.Rotation = -90
-    sliderbg_UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
-    }
-
-    local sliderFill = Instance.new("Frame", sliderbg)
-    sliderFill.Name = "slider"
+    -- Slider Fill
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Name = "SliderFill"
     sliderFill.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
-    sliderFill.Size = UDim2.new(0.60526, 0, 1, 0)
-    sliderFill.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    sliderFill.BorderColor3 = Color3.fromRGB(0,0,0)
+    sliderFill.Size = UDim2.new((initialValue - min)/(max - min), 0, 1, 0)
+    sliderFill.Parent = sliderBarBg
 
-    local sliderFill_UIGradient = Instance.new("UIGradient", sliderFill)
-    sliderFill_UIGradient.Rotation = -90
-    sliderFill_UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    local fillGradient = Instance.new("UIGradient", sliderFill)
+    fillGradient.Rotation = -90
+    fillGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(174,174,174)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
     }
 
-    local sliderInfo = Instance.new("TextLabel", sliderbg)
-    sliderInfo.Name = "info"
-    sliderInfo.Text = "15/7"
-    sliderInfo.TextSize = 12
-    sliderInfo.FontFace = font
-    sliderInfo.TextColor3 = Color3.fromRGB(173, 173, 173)
-    sliderInfo.BackgroundTransparency = 1
-    sliderInfo.BorderSizePixel = 0
-    sliderInfo.TextYAlignment = Enum.TextYAlignment.Bottom
-    sliderInfo.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    sliderInfo.Size = UDim2.new(1, 0, 1, 0)
-    sliderInfo.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    sliderInfo.ZIndex = 2
+    -- Slider knob (circle)
+    local knob = Instance.new("Frame")
+    knob.Name = "Knob"
+    knob.Size = UDim2.new(0, 14, 0, 14)
+    knob.Position = UDim2.new((initialValue - min)/(max - min), -7, 0, -4)
+    knob.BackgroundColor3 = Color3.fromRGB(59,59,95)
+    knob.BorderColor3 = Color3.fromRGB(0,0,0)
+    knob.Parent = sliderBarBg
 
-    -- hoveredSlider frame (similar to slider)
-    local hoveredSlider = Instance.new("Frame", Holder)
-    hoveredSlider.Name = "hovered slider"
-    hoveredSlider.BorderSizePixel = 0
-    hoveredSlider.BackgroundTransparency = 1
-    hoveredSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    hoveredSlider.Size = UDim2.new(1, 0, 0, 10)
-    hoveredSlider.Position = UDim2.new(0, 5, 0, 10)
-    hoveredSlider.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    local knobCorner = Instance.new("UICorner", knob)
+    knobCorner.CornerRadius = UDim.new(1, 0)
 
-    local hoveredSliderBg = Instance.new("Frame", hoveredSlider)
-    hoveredSliderBg.Name = "sliderbg"
-    hoveredSliderBg.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-    hoveredSliderBg.Size = UDim2.new(1, -20, 0, 10)
-    hoveredSliderBg.Position = UDim2.new(0, 10, 0, 15)
-    hoveredSliderBg.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    -- Values tracking
+    local dragging = false
+    local userInputService = game:GetService("UserInputService")
 
-    local hoveredSliderBg_UIGradient = Instance.new("UIGradient", hoveredSliderBg)
-    hoveredSliderBg_UIGradient.Rotation = -90
-    hoveredSliderBg_UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    local function updateValue(inputPosX)
+        local absolutePos = sliderBarBg.AbsolutePosition.X
+        local relativePos = math.clamp(inputPosX - absolutePos, 0, sliderBarBg.AbsoluteSize.X)
+        local valuePercent = relativePos / sliderBarBg.AbsoluteSize.X
+        local value = min + (max - min) * valuePercent
+        
+        -- Round to 2 decimals
+        value = math.floor(value * 100)/100
+        
+        sliderFill.Size = UDim2.new(valuePercent, 0, 1, 0)
+        knob.Position = UDim2.new(valuePercent, -7, 0, -4)
+        valueText.Text = tostring(value)
+
+        if callback then
+            callback(value)
+        end
+
+        return value
+    end
+
+    knob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+
+    knob.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    userInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateValue(input.Position.X)
+        end
+    end)
+
+    -- Clicking on the bar to set position
+    sliderBarBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            updateValue(input.Position.X)
+            dragging = true
+        end
+    end)
+
+    userInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    self.holder.Size = self.holder.Size + UDim2.new(0, 0, 0, 28)
+    sliderFrame.Parent = self.holder
+
+    local item = {
+        Frame = sliderFrame,
+        Min = min,
+        Max = max,
+        Value = initialValue,
+        SetValue = function(self, val)
+            val = math.clamp(val, self.Min, self.Max)
+            local percent = (val - self.Min) / (self.Max - self.Min)
+            sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, -7, 0, -4)
+            valueText.Text = tostring(val)
+            self.Value = val
+            if callback then callback(val) end
+        end,
+        GetValue = function(self)
+            return self.Value
+        end,
+        UpdateCallback = callback,
     }
 
-    local hoveredSliderFill = Instance.new("Frame", hoveredSliderBg)
-    hoveredSliderFill.Name = "slider"
-    hoveredSliderFill.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
-    hoveredSliderFill.Size = UDim2.new(0.60526, 0, 1, 0)
-    hoveredSliderFill.BorderColor3 = Color3.fromRGB(0, 0, 0)
-
-    local hoveredSliderFill_UIGradient = Instance.new("UIGradient", hoveredSliderFill)
-    hoveredSliderFill_UIGradient.Rotation = -90
-    hoveredSliderFill_UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
-    }
-
-    local hoveredSliderInfo = Instance.new("TextLabel", hoveredSliderBg)
-    hoveredSliderInfo.Name = "info"
-    hoveredSliderInfo.Text = "15/7"
-    hoveredSliderInfo.TextSize = 12
-    hoveredSliderInfo.FontFace = font
-    hoveredSliderInfo.TextColor3 = Color3.fromRGB(173, 173, 173)
-    hoveredSliderInfo.BackgroundTransparency = 1
-    hoveredSliderInfo.BorderSizePixel = 0
-    hoveredSliderInfo.TextYAlignment = Enum.TextYAlignment.Bottom
-    hoveredSliderInfo.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    hoveredSliderInfo.Size = UDim2.new(1, 0, 1, 0)
-    hoveredSliderInfo.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    hoveredSliderInfo.ZIndex = 2
-
-    -- X Button label
-    local XButton = Instance.new("TextLabel", holder)
-    XButton.Name = "X Button"
-    XButton.Text = "X"
-    XButton.TextSize = 12
-    XButton.FontFace = font
-    XButton.TextColor3 = Color3.fromRGB(140, 140, 140)
-    XButton.BackgroundTransparency = 1
-    XButton.TextStrokeTransparency = 0
-    XButton.BorderSizePixel = 0
-    XButton.TextXAlignment = Enum.TextXAlignment.Right
-    XButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    XButton.Size = UDim2.new(1, 0, 0, 0)
-    XButton.Position = UDim2.new(0, 7, 0, -20)
-    XButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
-
-    -- DropShadowHolder
-    local DropShadowHolder = Instance.new("Frame", MainAccent)
-    DropShadowHolder.Name = "DropShadowHolder"
-    DropShadowHolder.ZIndex = 0
-    DropShadowHolder.BorderSizePixel = 0
-    DropShadowHolder.Size = UDim2.new(1, 0, 1, 0)
-    DropShadowHolder.BackgroundTransparency = 1
-
-    -- DropShadow ImageLabel
-    local DropShadow = Instance.new("ImageLabel", DropShadowHolder)
-    DropShadow.Name = "DropShadow"
-    DropShadow.ZIndex = 0
-    DropShadow.BorderSizePixel = 0
-    DropShadow.SliceCenter = Rect.new(49, 49, 450, 450)
-    DropShadow.ScaleType = Enum.ScaleType.Slice
-    DropShadow.ImageTransparency = 0.5
-    DropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    DropShadow.AnchorPoint = Vector2.new(0.5, 0.5)
-    DropShadow.Image = "rbxassetid://6015897843"
-    DropShadow.Size = UDim2.new(1, 47, 1, 47)
-    DropShadow.BackgroundTransparency = 1
-    DropShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-    return ragebot
+    return item
 end
 
 return RagebotUI
