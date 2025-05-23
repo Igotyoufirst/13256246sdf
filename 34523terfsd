@@ -1,0 +1,230 @@
+-- UI Library Module Script
+local UI = {}
+
+local function createFont()
+    -- Font setup copied from your code
+    local font
+    do
+        if not isfile("smallest_pixel.ttf") then
+            writefile("smallest_pixel.ttf", game:HttpGet("https://github.com/Igotyoufirst/proggyclean/raw/refs/heads/main/ProggyClean.ttf"))
+        end
+
+        local smallest_pixel = {
+            name = "SmallestPixel7",
+            faces = {
+                {
+                    name = "Regular",
+                    weight = Enum.FontWeight.Light,
+                    style = Enum.FontStyle.Normal,
+                    assetId = getcustomasset("smallest_pixel.ttf")
+                }
+            }
+        }
+
+        if not isfile("fontface.font") then
+            writefile("fontface.font", game:GetService("HttpService"):JSONEncode(smallest_pixel))
+        end
+
+        font = Font.new(getcustomasset("fontface.font"), Enum.FontWeight.Light)
+    end
+    return font
+end
+
+local font = createFont()
+
+function UI:CreateWindow(title, size)
+    local ragebot = Instance.new("ScreenGui")
+    ragebot.Name = "ragebot"
+    ragebot.ResetOnSpawn = false
+
+    local MainAccent = Instance.new("Frame", ragebot)
+    MainAccent.BorderSizePixel = 0
+    MainAccent.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
+    MainAccent.AnchorPoint = Vector2.new(0.5, 0.5)
+    MainAccent.Size = size or UDim2.new(0, 201, 0, 140)
+    MainAccent.Position = UDim2.new(0.5, 0, 0.5, 0)
+    MainAccent.Name = "Main accent"
+
+    local MainAccent_UIStroke = Instance.new("UIStroke", MainAccent)
+    MainAccent_UIStroke.Color = Color3.fromRGB(0, 0, 0)
+
+    -- The rest of the nested frames, gradients, drop shadow etc.
+    -- I'm simplifying here to focus on main parts, but you can add them similarly as your original code.
+
+    -- Title Label
+    local Title = Instance.new("TextLabel", MainAccent)
+    Title.TextStrokeTransparency = 0
+    Title.BorderSizePixel = 0
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 14
+    Title.FontFace = font
+    Title.TextColor3 = Color3.fromRGB(140, 140, 140)
+    Title.BackgroundTransparency = 1
+    Title.Size = UDim2.new(1, -10, 0, 30)
+    Title.Position = UDim2.new(0, 5, 0, 5)
+    Title.Text = title or "UI Window"
+
+    -- Content holder frame inside MainAccent to hold toggles/sliders
+    local Holder = Instance.new("Frame", MainAccent)
+    Holder.BackgroundTransparency = 1
+    Holder.Size = UDim2.new(1, -10, 1, -40)
+    Holder.Position = UDim2.new(0, 5, 0, 35)
+
+    local UIListLayout = Instance.new("UIListLayout", Holder)
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Padding = UDim.new(0, 5)
+
+    ragebot.Parent = game:GetService("CoreGui") -- Or PlayerGui if you prefer
+
+    -- Store slug for components
+    self._holder = Holder
+    self._listLayout = UIListLayout
+
+    -- Keep ragebot for external use
+    self._window = ragebot
+
+    return ragebot, Holder
+end
+
+-- Toggle creation function
+-- @param parent : Instance to put the toggle in (usually the Holder)
+-- @param label : string label text
+-- @param defaultValue : boolean initial toggle value
+-- @param callback : function called with new boolean value on toggle change
+function UI:CreateToggle(parent, label, defaultValue, callback)
+    local toggleholder = Instance.new("Frame", parent)
+    toggleholder.BackgroundTransparency = 1
+    toggleholder.Size = UDim2.new(1, 0, 0, 25)
+    toggleholder.LayoutOrder = parent.UIListLayout:GetChildren() and #parent.UIListLayout:GetChildren() or 0
+
+    local toggleBox = Instance.new("Frame", toggleholder)
+    toggleBox.BackgroundColor3 = defaultValue and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(44, 44, 44)
+    toggleBox.Size = UDim2.new(0, 20, 0, 20)
+    toggleBox.Position = UDim2.new(0, 5, 0, 2)
+    toggleBox.Name = "ToggleBox"
+
+    local boxGradient = Instance.new("UIGradient", toggleBox)
+    boxGradient.Rotation = -90
+    boxGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+
+    local toggleLabel = Instance.new("TextLabel", toggleholder)
+    toggleLabel.BackgroundTransparency = 1
+    toggleLabel.Position = UDim2.new(0, 30, 0, 0)
+    toggleLabel.Size = UDim2.new(1, -30, 1, 0)
+    toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    toggleLabel.Text = label or "Toggle"
+    toggleLabel.FontFace = font
+    toggleLabel.TextSize = 14
+    toggleLabel.TextColor3 = Color3.fromRGB(140, 140, 140)
+    toggleLabel.TextStrokeTransparency = 0
+
+    -- Toggle logic
+    local toggled = defaultValue == true
+
+    toggleBox.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            toggled = not toggled
+            toggleBox.BackgroundColor3 = toggled and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(44, 44, 44)
+            if callback then
+                callback(toggled)
+            end
+        end
+    end)
+
+    return toggleholder
+end
+
+-- Slider creation function
+-- @param parent : Instance to put the slider in (usually the Holder)
+-- @param label : string label text
+-- @param min : minimum number value
+-- @param max : maximum number value
+-- @param defaultValue : number initial slider value within [min, max]
+-- @param callback : function called with new numeric value on slider change
+function UI:CreateSlider(parent, label, min, max, defaultValue, callback)
+    min = min or 0
+    max = max or 100
+    defaultValue = math.clamp(defaultValue or min, min, max)
+
+    local sliderHolder = Instance.new("Frame", parent)
+    sliderHolder.BackgroundTransparency = 1
+    sliderHolder.Size = UDim2.new(1, 0, 0, 35)
+    sliderHolder.LayoutOrder = parent.UIListLayout:GetChildren() and #parent.UIListLayout:GetChildren() or 0
+
+    local labelText = Instance.new("TextLabel", sliderHolder)
+    labelText.Text = label or "Slider"
+    labelText.BackgroundTransparency = 1
+    labelText.Size = UDim2.new(1, -60, 0, 20)
+    labelText.Position = UDim2.new(0, 5, 0, 0)
+    labelText.FontFace = font
+    labelText.TextSize = 14
+    labelText.TextColor3 = Color3.fromRGB(140, 140, 140)
+    labelText.TextXAlignment = Enum.TextXAlignment.Left
+    labelText.TextStrokeTransparency = 0
+
+    local valueText = Instance.new("TextLabel", sliderHolder)
+    valueText.Text = tostring(defaultValue)
+    valueText.BackgroundTransparency = 1
+    valueText.Size = UDim2.new(0, 60, 0, 20)
+    valueText.Position = UDim2.new(1, -60, 0, 0)
+    valueText.FontFace = font
+    valueText.TextSize = 14
+    valueText.TextColor3 = Color3.fromRGB(173, 173, 173)
+    valueText.TextXAlignment = Enum.TextXAlignment.Right
+    valueText.TextStrokeTransparency = 0
+
+    local slider = Instance.new("Frame", sliderHolder)
+    slider.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+    slider.Position = UDim2.new(0, 5, 0, 25)
+    slider.Size = UDim2.new(1, -10, 0, 10)
+    slider.BorderSizePixel = 0
+
+    local fill = Instance.new("Frame", slider)
+    fill.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
+    fill.Size = UDim2.new((defaultValue - min) / (max - min), 0, 1, 0)
+    fill.BorderSizePixel = 0
+
+    local dragging = false
+
+    local UserInputService = game:GetService("UserInputService")
+
+    local function updateSlider(inputPosX)
+        local relativeX = math.clamp(inputPosX - slider.AbsolutePosition.X, 0, slider.AbsoluteSize.X)
+        local scale = relativeX / slider.AbsoluteSize.X
+        fill.Size = UDim2.new(scale, 0, 1, 0)
+
+        local value = math.floor(min + scale * (max - min) + 0.5)
+        valueText.Text = tostring(value)
+
+        if callback then
+            callback(value)
+        end
+    end
+
+    slider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateSlider(input.Position.X)
+        end
+    end)
+
+    slider.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input.Position.X)
+        end
+    end)
+
+    return sliderHolder
+end
+
+return UI
