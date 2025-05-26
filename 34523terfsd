@@ -1,325 +1,205 @@
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+
 local ui = {}
 
--- Font Loading kept same as previous
+-- Load font (simplified for demo)
 function ui.loadFont(fontUrl)
     if not fontUrl then return nil end
     local fontPath = "smallest_pixel.ttf"
     local fontFacePath = "fontface.font"
 
-    writefile(fontPath, game:HttpGet(fontUrl))
+    if not pcall(function() return readfile(fontPath) end) then
+        writefile(fontPath, game:HttpGet(fontUrl))
+    end
 
-    local smallest_pixel = {
+    local fontData = {
         name = "SmallestPixel7",
         faces = {
             {
                 name = "Regular",
-                weight = Enum.FontWeight.Light,
-                style = Enum.FontStyle.Normal,
+                weight = Enum.FontWeight.Regular.Value,
+                style = Enum.FontStyle.Normal.Name,
                 assetId = getcustomasset(fontPath)
             }
         }
     }
 
-    writefile(fontFacePath, game:GetService("HttpService"):JSONEncode(smallest_pixel))
+    if not pcall(function() return readfile(fontFacePath) end) then
+        writefile(fontFacePath, HttpService:JSONEncode(fontData))
+    end
+
     local success, font = pcall(function()
-        return Font.new(getcustomasset(fontFacePath), Enum.FontWeight.Light)
+        return Font.new(getcustomasset(fontFacePath), Enum.FontWeight.Regular)
     end)
-    
+
     if success then
         return font
     else
-        return nil
+        return Enum.Font.SourceSans -- fallback
     end
 end
 
-function ui.Create()
+-- Create base UI and returns menu object
+function ui.createUI(font)
     local menu = {}
-    local font = Enum.Font.SourceSans -- Default font, can be changed with :SetFont()
+    menu.font = font or Enum.Font.SourceSans
 
-    -- Create main UI parts as before, simplified for clarity
-    local ragebot = Instance.new("ScreenGui")
-    ragebot.Name = "ragebot"
-    ragebot.ResetOnSpawn = false
-    ragebot.Parent = game:GetService("CoreGui")
+    -- Create main GUI container
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "RageUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = game:GetService("CoreGui")
 
-    local MainAccent = Instance.new("Frame", ragebot)
-    MainAccent.Name = "Main accent"
-    MainAccent.AnchorPoint = Vector2.new(0.5, 0.5)
-    MainAccent.Position = UDim2.new(0.5, 0, 0.5, 0)
-    MainAccent.Size = UDim2.new(0, 201, 0, 135)
-    MainAccent.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
-    MainAccent.BorderSizePixel = 0
+    local mainFrame = Instance.new("Frame", screenGui)
+    mainFrame.Name = "MainFrame"
+    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    mainFrame.Size = UDim2.new(0, 300, 0, 200)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    mainFrame.BorderSizePixel = 0
 
-    local MainAccent_UIStroke = Instance.new("UIStroke", MainAccent)
+    local uiList = Instance.new("UIListLayout", mainFrame)
+    uiList.Padding = UDim.new(0, 6)
+    uiList.SortOrder = Enum.SortOrder.LayoutOrder
 
-    local secondmain = Instance.new("Frame", MainAccent)
-    secondmain.Name = "secondmain"
-    secondmain.Position = UDim2.new(0, 1, 0, 1)
-    secondmain.Size = UDim2.new(1, -2, 1, -2)
-    secondmain.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
-    secondmain.BorderSizePixel = 0
+    menu.gui = screenGui
+    menu.holder = mainFrame
 
-    local boxmain = Instance.new("Frame", secondmain)
-    boxmain.Name = "box main"
-    boxmain.Position = UDim2.new(0, 4, 0, 20)
-    boxmain.Size = UDim2.new(1, -8, 1, -24)
-    boxmain.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    boxmain.BorderSizePixel = 0
-
-    local boxmain_UIStroke = Instance.new("UIStroke", boxmain)
-    boxmain_UIStroke.Color = Color3.fromRGB(43, 43, 43)
-
-    local secondboxmain = Instance.new("Frame", boxmain)
-    secondboxmain.Name = "second box main"
-    secondboxmain.Position = UDim2.new(0, 5, 0, 5)
-    secondboxmain.Size = UDim2.new(1, -10, 1, -10)
-    secondboxmain.BackgroundColor3 = Color3.fromRGB(23, 23, 23)
-    secondboxmain.BorderSizePixel = 0
-
-    local secondboxmain_UIStroke = Instance.new("UIStroke", secondboxmain)
-    secondboxmain_UIStroke.Color = Color3.fromRGB(43, 43, 43)
-
-    local holder = Instance.new("Frame", secondboxmain)
-    holder.Name = "holder"
-    holder.Position = UDim2.new(0, 4, 0, 4)
-    holder.Size = UDim2.new(1, -8, 1, -8)
-    holder.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    holder.BorderSizePixel = 0
-
-    local holder_UIStroke = Instance.new("UIStroke", holder)
-    holder_UIStroke.Color = Color3.fromRGB(43, 43, 43)
-
-    local accentstripe = Instance.new("Frame", holder)
-    accentstripe.Name = "accent stripe"
-    accentstripe.Position = UDim2.new(0, 1, 0, 1)
-    accentstripe.Size = UDim2.new(1, -2, 0, 2)
-    accentstripe.BackgroundColor3 = Color3.fromRGB(74, 84, 122)
-
-    local holder_UIGradient = Instance.new("UIGradient", holder)
-    holder_UIGradient.Rotation = -90
-    holder_UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(103, 103, 103)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
-    }
-
-    local Title = Instance.new("TextLabel", holder)
-    Title.Name = "Title"
-    Title.Position = UDim2.new(0, -8, 0, -45)
-    Title.Size = UDim2.new(0, 200, 0, 50)
-    Title.BackgroundTransparency = 1
-    Title.BorderSizePixel = 0
-    Title.Font = font
-    Title.Text = "biteme.club"
-    Title.TextColor3 = Color3.fromRGB(140, 140, 140)
-    Title.TextSize = 12
-    Title.TextStrokeTransparency = 0
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Holder = Instance.new("Frame", holder)
-    Holder.Name = "Holder"
-    Holder.Size = UDim2.new(1, 0, 1, 0)
-    Holder.BackgroundTransparency = 1
-    Holder.BorderSizePixel = 0
-
-    local UIListLayout = Instance.new("UIListLayout", Holder)
-    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    UIListLayout.Padding = UDim.new(0, 5)
-
-    -- Save references
-    menu.gui = ragebot
-    menu.holder = Holder
-    menu.font = font
-
-    -- Changes font globally
-    function menu:SetFont(fontface)
-        self.font = fontface
-        Title.Font = fontface
-    end
-
-    -- Helper for toggles
+    -- Helper to create toggles
     function menu:CreateToggle(name, default, callback)
-        default = default == true
+        local frame = Instance.new("Frame", self.holder)
+        frame.Name = "ToggleHolder"
+        frame.Size = UDim2.new(1, -20, 0, 25)
+        frame.BackgroundTransparency = 1
 
-        local toggleholder = Instance.new("Frame", self.holder)
-        toggleholder.Name = "toggleholder"
-        toggleholder.Size = UDim2.new(1, -10, 0, 26)
-        toggleholder.BackgroundTransparency = 1
+        local label = Instance.new("TextLabel", frame)
+        label.Name = "Label"
+        label.Size = UDim2.new(0.8, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Font = self.font
+        label.Text = name or "Toggle"
+        label.TextColor3 = Color3.fromRGB(200, 200, 200)
+        label.TextSize = 14
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Position = UDim2.new(0, 5, 0, 0)
 
-        local togglename = Instance.new("TextLabel", toggleholder)
-        togglename.Name = "ToggleName"
-        togglename.Size = UDim2.new(1, -36, 1, 0)
-        togglename.BackgroundTransparency = 1
-        togglename.Font = self.font
-        togglename.Text = name
-        togglename.TextColor3 = Color3.fromRGB(140, 140, 140)
-        togglename.TextSize = 14
-        togglename.TextXAlignment = Enum.TextXAlignment.Left
-        togglename.Position = UDim2.new(0, 6, 0, 0)
+        local toggleBtn = Instance.new("TextButton", frame)
+        toggleBtn.Name = "ToggleButton"
+        toggleBtn.Size = UDim2.new(0, 40, 0, 20)
+        toggleBtn.Position = UDim2.new(0.85, 0, 0, 2.5)
+        toggleBtn.Text = default and "On" or "Off"
+        toggleBtn.Font = self.font
+        toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+        toggleBtn.TextSize = 14
+        toggleBtn.BackgroundColor3 = default and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(70, 70, 70)
+        toggleBtn.BorderSizePixel = 0
+        toggleBtn.AutoButtonColor = true
 
-        local togglebtn = Instance.new("Frame", toggleholder)
-        togglebtn.Name = "ToggleButton"
-        togglebtn.Size = UDim2.new(0, 24, 0, 18)
-        togglebtn.Position = UDim2.new(1, -26, 0, 4)
-        togglebtn.BackgroundColor3 = default and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(44, 44, 44)
-        togglebtn.BorderSizePixel = 0
-        togglebtn.AutoButtonColor = false
-        togglebtn.ZIndex = 2
+        local toggled = default and true or false
 
-        local innerCircle = Instance.new("Frame", togglebtn)
-        innerCircle.Name = "InnerCircle"
-        innerCircle.Size = UDim2.new(0, 14, 0, 14)
-        innerCircle.Position = default and UDim2.new(1, -16, 0, 2) or UDim2.new(0, 2, 0, 2)
-        innerCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        innerCircle.BorderSizePixel = 0
-        innerCircle.ZIndex = 3
-        innerCircle.AnchorPoint = Vector2.new(0, 0)
-
-        -- Toggle function
-        local state = default
-
-        local function toggle()
-            state = not state
-            if state then
-                togglebtn.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
-                innerCircle:TweenPosition(UDim2.new(1, -16, 0, 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
-            else
-                togglebtn.BackgroundColor3 = Color3.fromRGB(44, 44, 44)
-                innerCircle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
-            end
+        local function updateToggle(state)
+            toggled = state
+            toggleBtn.Text = toggled and "On" or "Off"
+            toggleBtn.BackgroundColor3 = toggled and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(70, 70, 70)
             if callback then
-                callback(state)
+                pcall(callback, toggled)
             end
         end
 
-        -- User input
-        togglebtn.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                toggle()
-            end
+        toggleBtn.MouseButton1Click:Connect(function()
+            updateToggle(not toggled)
         end)
 
-        return {
-            Get = function() return state end,
-            Set = function(val)
-                if val ~= state then
-                    toggle()
-                end
-            end,
-            Container = toggleholder
-        }
+        return frame, updateToggle
     end
 
-    -- Helper for sliders
-    function menu:CreateSlider(name, min, max, step, defaultValue, callback)
-        min = min or 0
-        max = max or 100
-        step = step or 1
-        defaultValue = math.clamp(defaultValue or min, min, max)
+    -- Helper to create sliders
+    function menu:CreateSlider(name, minValue, maxValue, initialValue, callback)
+        local frame = Instance.new("Frame", self.holder)
+        frame.Name = "SliderHolder"
+        frame.Size = UDim2.new(1, -20, 0, 40)
+        frame.BackgroundTransparency = 1
 
-        local sliderholder = Instance.new("Frame", self.holder)
-        sliderholder.Name = "sliderholder"
-        sliderholder.Size = UDim2.new(1, -10, 0, 40)
-        sliderholder.BackgroundTransparency = 1
+        local label = Instance.new("TextLabel", frame)
+        label.Name = "Label"
+        label.Size = UDim2.new(0.5, 0, 0.5, 0)
+        label.BackgroundTransparency = 1
+        label.Font = self.font
+        label.Text = name or "Slider"
+        label.TextColor3 = Color3.fromRGB(200, 200, 200)
+        label.TextSize = 14
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Position = UDim2.new(0, 5, 0, 2)
 
-        local slidername = Instance.new("TextLabel", sliderholder)
-        slidername.Name = "SliderName"
-        slidername.Size = UDim2.new(1, -10, 0, 18)
-        slidername.BackgroundTransparency = 1
-        slidername.Font = self.font
-        slidername.Text = name
-        slidername.TextColor3 = Color3.fromRGB(140, 140, 140)
-        slidername.TextSize = 14
-        slidername.TextXAlignment = Enum.TextXAlignment.Left
-        slidername.Position = UDim2.new(0, 5, 0, 0)
+        local valueLabel = Instance.new("TextLabel", frame)
+        valueLabel.Name = "ValueLabel"
+        valueLabel.Size = UDim2.new(0.25, 0, 0.5, 0)
+        valueLabel.BackgroundTransparency = 1
+        valueLabel.Font = self.font
+        valueLabel.Position = UDim2.new(0.75, 0, 0, 2)
+        valueLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+        valueLabel.TextSize = 14
+        valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+        valueLabel.Text = tostring(initialValue or minValue)
 
-        local slidervalue = Instance.new("TextLabel", sliderholder)
-        slidervalue.Name = "SliderValue"
-        slidervalue.Size = UDim2.new(0, 50, 0, 18)
-        slidervalue.BackgroundTransparency = 1
-        slidervalue.Font = self.font
-        slidervalue.TextColor3 = Color3.fromRGB(173, 173, 173)
-        slidervalue.TextSize = 14
-        slidervalue.Position = UDim2.new(1, -55, 0, 0)
-        slidervalue.TextXAlignment = Enum.TextXAlignment.Right
-        slidervalue.Text = tostring(defaultValue)
+        local sliderBar = Instance.new("Frame", frame)
+        sliderBar.Name = "SliderBar"
+        sliderBar.Size = UDim2.new(0.9, -10, 0, 10)
+        sliderBar.Position = UDim2.new(0, 5, 0.6, 0)
+        sliderBar.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        sliderBar.BorderSizePixel = 0
+        sliderBar.ClipsDescendants = true
 
-        local sliderbg = Instance.new("Frame", sliderholder)
-        sliderbg.Name = "SliderBG"
-        sliderbg.Position = UDim2.new(0, 5, 0, 22)
-        sliderbg.Size = UDim2.new(1, -10, 0, 10)
-        sliderbg.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-        sliderbg.BorderSizePixel = 0
-        sliderbg.ClipsDescendants = true
-        sliderbg.Cursor = "PointingHand"
-
-        local sliderfill = Instance.new("Frame", sliderbg)
-        sliderfill.Name = "SliderFill"
-        sliderfill.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
-        sliderfill.Size = UDim2.new((defaultValue - min) / (max - min), 0, 1, 0)
-        sliderfill.BorderSizePixel = 0
+        local fill = Instance.new("Frame", sliderBar)
+        fill.Name = "Fill"
+        fill.Size = UDim2.new(0, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
+        fill.BorderSizePixel = 0
 
         local dragging = false
-        local value = defaultValue
+        local minVal = minValue or 0
+        local maxVal = maxValue or 100
+        local value = initialValue or minVal
 
-        local function updateSlider(inputPosX)
-            local relativePos = inputPosX - sliderbg.AbsolutePosition.X
-            local percent = math.clamp(relativePos / sliderbg.AbsoluteSize.X, 0, 1)
-            local steppedPercent = math.floor(percent * (max - min) / step + 0.5) * step / (max - min)
-            value = min + steppedPercent * (max - min)
-            value = math.clamp(value, min, max)
-            sliderfill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-            slidervalue.Text = tostring(math.floor(value / step + 0.5) * step)
+        local function setValue(newVal)
+            value = math.clamp(newVal, minVal, maxVal)
+            local percent = (value - minVal) / (maxVal - minVal)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            valueLabel.Text = string.format("%.2f", value)
             if callback then
-                callback(value)
+                pcall(callback, value)
             end
         end
 
-        sliderbg.InputBegan:Connect(function(input)
+        setValue(value)
+
+        sliderBar.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = true
-                updateSlider(input.Position.X)
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
-                        dragging = false
-                    end
-                end)
+                local relativeX = input.Position.X - sliderBar.AbsolutePosition.X
+                local sliderWidth = sliderBar.AbsoluteSize.X
+                local percent = math.clamp(relativeX / sliderWidth, 0, 1)
+                setValue(minVal + percent * (maxVal - minVal))
             end
         end)
 
-        sliderbg.InputChanged:Connect(function(input)
+        sliderBar.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                updateSlider(input.Position.X)
+                local relativeX = input.Position.X - sliderBar.AbsolutePosition.X
+                local sliderWidth = sliderBar.AbsoluteSize.X
+                local percent = math.clamp(relativeX / sliderWidth, 0, 1)
+                setValue(minVal + percent * (maxVal - minVal))
             end
         end)
 
-        -- Allow setting the slider value programmatically
-        local sliderObject = {}
-
-        function sliderObject:Get()
-            return value
-        end
-
-        function sliderObject:Set(val)
-            val = math.clamp(val, min, max)
-            value = val
-            sliderfill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-            slidervalue.Text = tostring(math.floor(value / step + 0.5) * step)
-            if callback then
-                callback(value)
-            end
-        end
-
-        sliderObject.Container = sliderholder
-
-        return sliderObject
-    end
-
-    -- Expose the main gui to allow manual manipulation or closing
-    function menu:Close()
-        if self.gui then
-            self.gui:Destroy()
-            self.gui = nil
-        end
+        return frame, setValue
     end
 
     return menu
