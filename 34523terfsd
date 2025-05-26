@@ -322,16 +322,14 @@ function UiLib:CreateToggle(labelText, initialState, callback)
 end
 
 
-function UiLib:CreateSlider(labelText, min, max, step, initialValue, callback, mode)
+function UiLib:CreateSlider(labelText, min, max, step, initialValue, callback)
     min = min or 0
     max = max or 100
     step = step or 1
     initialValue = initialValue or min
     initialValue = math.clamp(initialValue, min, max)
-    mode = mode or "custom" -- mode: "random", "backforth", or "custom"
 
     local TweenService = game:GetService("TweenService")
-    local RunService = game:GetService("RunService")
     local darkColor = Color3.fromRGB(140, 140, 140)
     local lightColor = Color3.fromRGB(173, 173, 173)
     local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad)
@@ -405,21 +403,6 @@ function UiLib:CreateSlider(labelText, min, max, step, initialValue, callback, m
     local dragging = false
     local value = initialValue
 
-    local function updateValue(newVal)
-        newVal = math.clamp(newVal, min, max)
-        newVal = math.floor(newVal / step + 0.5) * step
-        value = newVal
-
-        local percent = (value - min) / (max - min)
-        local targetSize = UDim2.new(percent, 0, 1, 0)
-        TweenService:Create(sliderFill, slideTweenInfo, {Size = targetSize}):Play()
-        sliderValue.Text = tostring(value)
-
-        if callback then
-            pcall(callback, value)
-        end
-    end
-
     local function updateValueFromX(x)
         local absPos = sliderBg.AbsolutePosition
         local absSize = sliderBg.AbsoluteSize
@@ -428,67 +411,37 @@ function UiLib:CreateSlider(labelText, min, max, step, initialValue, callback, m
 
         local percent = relativeX / absSize.X
         local newValue = min + (max - min) * percent
+        newValue = math.floor(newValue / step + 0.5) * step
+        newValue = math.clamp(newValue, min, max)
+        value = newValue
 
-        updateValue(newValue)
+        local targetSize = UDim2.new((value - min) / (max - min), 0, 1, 0)
+        TweenService:Create(sliderFill, slideTweenInfo, {Size = targetSize}):Play()
+        sliderValue.Text = tostring(value)
+
+        if callback then
+            pcall(callback, value)
+        end
     end
 
-    -- Only enable dragging if mode is custom
-    if mode == "custom" then
-        sliderBg.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-                updateValueFromX(input.Position.X)
-            end
-        end)
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateValueFromX(input.Position.X)
+        end
+    end)
 
-        sliderBg.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
-        end)
+    sliderBg.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
 
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                updateValueFromX(input.Position.X)
-            end
-        end)
-    end
-
-    -- Variables for mode handling
-    local connection
-    local backforthDirection = 1 -- 1 = increasing, -1 = decreasing
-    local valueSpeed = (max - min) / 2 -- units per second, adjust as needed
-    local lastUpdate = tick()
-
-    if mode == "random" then
-        -- Set up a loop that updates value randomly every ~0.5-1 seconds
-        connection = RunService.Heartbeat:Connect(function()
-            local currentTime = tick()
-            if currentTime - lastUpdate >= 0.5 then
-                lastUpdate = currentTime
-                local randomVal = math.random() * (max - min) + min
-                updateValue(randomVal)
-            end
-        end)
-    elseif mode == "backforth" then
-        -- Animate slider value back and forth between min and max
-        value = initialValue or min
-        connection = RunService.Heartbeat:Connect(function()
-            local currentTime = tick()
-            local dt = currentTime - lastUpdate
-            lastUpdate = currentTime
-
-            local newValue = value + backforthDirection * valueSpeed * dt
-            if newValue >= max then
-                newValue = max
-                backforthDirection = -1
-            elseif newValue <= min then
-                newValue = min
-                backforthDirection = 1
-            end
-            updateValue(newValue)
-        end)
-    end
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateValueFromX(input.Position.X)
+        end
+    end)
 
     local sliderObj = {
         Holder = sliderHolder,
@@ -499,18 +452,17 @@ function UiLib:CreateSlider(labelText, min, max, step, initialValue, callback, m
             return value
         end,
         SetValue = function(newValue)
-            updateValue(newValue)
+            value = math.clamp(newValue, min, max)
+            local targetSize = UDim2.new((value - min) / (max - min), 0, 1, 0)
+            TweenService:Create(sliderFill, slideTweenInfo, {Size = targetSize}):Play()
+            sliderValue.Text = tostring(value)
+            if callback then
+                pcall(callback, value)
+            end
         end,
         Min = min,
         Max = max,
         Step = step,
-        Mode = mode,
-        Disconnect = function()
-            if connection then
-                connection:Disconnect()
-                connection = nil
-            end
-        end,
     }
 
     table.insert(self.sliders, sliderObj)
