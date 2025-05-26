@@ -1,208 +1,340 @@
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 
-local ui = {}
+local UI = {}
+UI.__index = UI
 
--- Load font (simplified for demo)
-function ui.loadFont(fontUrl)
-    if not fontUrl then return nil end
-    local fontPath = "smallest_pixel.ttf"
-    local fontFacePath = "fontface.font"
+-- Fonts & UI references
+UI.fontFileName = "smallest_pixel.ttf"
+UI.fontFaceFileName = "fontface.font"
+UI.font = nil
 
-    if not pcall(function() return readfile(fontPath) end) then
-        writefile(fontPath, game:HttpGet(fontUrl))
+function UI:SetupFont(fontUrl)
+    -- Write font file if missing
+    if not pcall(function() return readfile(self.fontFileName) end) then
+        writefile(self.fontFileName, game:HttpGet(fontUrl))
     end
 
-    local fontData = {
+    -- Define font face data with Roblox enums for font weight/style
+    local fontFaceData = {
         name = "SmallestPixel7",
         faces = {
             {
                 name = "Regular",
                 weight = Enum.FontWeight.Regular.Value,
                 style = Enum.FontStyle.Normal.Name,
-                assetId = getcustomasset(fontPath)
+                assetId = getcustomasset(self.fontFileName)
             }
         }
     }
 
-    if not pcall(function() return readfile(fontFacePath) end) then
-        writefile(fontFacePath, HttpService:JSONEncode(fontData))
+    if not pcall(function() return readfile(self.fontFaceFileName) end) then
+        writefile(self.fontFaceFileName, HttpService:JSONEncode(fontFaceData))
     end
 
     local success, font = pcall(function()
-        return Font.new(getcustomasset(fontFacePath), Enum.FontWeight.Regular)
+        return Font.new(getcustomasset(self.fontFaceFileName), Enum.FontWeight.Light)
     end)
 
     if success then
-        return font
+        self.font = font
     else
-        return Enum.Font.SourceSans -- fallback
+        self.font = Enum.Font.SourceSans -- fallback
     end
+
+    return self.font
 end
 
--- Create base UI and returns menu object
-function ui.createUI(font)
-    local menu = {}
-    menu.font = font or Enum.Font.SourceSans
+function UI:CreateMainContainer()
+    -- Remove existing if exists
+    local coreGui = game:GetService("CoreGui")
+    local existingUI = coreGui:FindFirstChild("RageUI")
+    if existingUI then existingUI:Destroy() end
 
-    -- Create main GUI container
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "RageUI"
     screenGui.ResetOnSpawn = false
-    screenGui.Parent = game:GetService("CoreGui")
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Parent = coreGui
 
-    local mainFrame = Instance.new("Frame", screenGui)
-    mainFrame.Name = "MainFrame"
-    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    mainFrame.Size = UDim2.new(0, 300, 0, 200)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    mainFrame.BorderSizePixel = 0
+    -- Main Accent Frame
+    local MainAccent = Instance.new("Frame", screenGui)
+    MainAccent.Name = "MainAccent"
+    MainAccent.AnchorPoint = Vector2.new(0.5, 0.5)
+    MainAccent.Size = UDim2.new(0, 201, 0, 135)
+    MainAccent.Position = UDim2.new(0.5, 0, 0.5, 0)
+    MainAccent.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
+    MainAccent.BorderSizePixel = 0
 
-    local uiList = Instance.new("UIListLayout", mainFrame)
-    uiList.Padding = UDim.new(0, 6)
-    uiList.SortOrder = Enum.SortOrder.LayoutOrder
+    local MainAccent_UIStroke = Instance.new("UIStroke", MainAccent)
+    MainAccent_UIStroke.Color = Color3.fromRGB(0, 0, 0)
 
-    menu.gui = screenGui
-    menu.holder = mainFrame
+    local secondmain = Instance.new("Frame", MainAccent)
+    secondmain.Name = "SecondMain"
+    secondmain.Size = UDim2.new(1, -2, 1, -2)
+    secondmain.Position = UDim2.new(0, 1, 0, 1)
+    secondmain.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+    secondmain.BorderSizePixel = 0
 
-    -- Helper to create toggles
-    function menu:CreateToggle(name, default, callback)
-        local frame = Instance.new("Frame", self.holder)
-        frame.Name = "ToggleHolder"
-        frame.Size = UDim2.new(1, -20, 0, 25)
-        frame.BackgroundTransparency = 1
+    local boxmain = Instance.new("Frame", secondmain)
+    boxmain.Name = "BoxMain"
+    boxmain.Size = UDim2.new(1, -8, 1, -24)
+    boxmain.Position = UDim2.new(0, 4, 0, 20)
+    boxmain.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    boxmain.BorderSizePixel = 0
 
-        local label = Instance.new("TextLabel", frame)
-        label.Name = "Label"
-        label.Size = UDim2.new(0.8, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.Font = self.font
-        label.Text = name or "Toggle"
-        label.TextColor3 = Color3.fromRGB(200, 200, 200)
-        label.TextSize = 14
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.Position = UDim2.new(0, 5, 0, 0)
+    local boxmain_UIStroke = Instance.new("UIStroke", boxmain)
+    boxmain_UIStroke.Color = Color3.fromRGB(43, 43, 43)
 
-        local toggleBtn = Instance.new("TextButton", frame)
-        toggleBtn.Name = "ToggleButton"
-        toggleBtn.Size = UDim2.new(0, 40, 0, 20)
-        toggleBtn.Position = UDim2.new(0.85, 0, 0, 2.5)
-        toggleBtn.Text = default and "On" or "Off"
-        toggleBtn.Font = self.font
-        toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
-        toggleBtn.TextSize = 14
-        toggleBtn.BackgroundColor3 = default and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(70, 70, 70)
-        toggleBtn.BorderSizePixel = 0
-        toggleBtn.AutoButtonColor = true
+    local secondboxmain = Instance.new("Frame", boxmain)
+    secondboxmain.Name = "SecondBoxMain"
+    secondboxmain.Size = UDim2.new(1, -10, 1, -10)
+    secondboxmain.Position = UDim2.new(0, 5, 0, 5)
+    secondboxmain.BackgroundColor3 = Color3.fromRGB(23, 23, 23)
+    secondboxmain.BorderSizePixel = 0
 
-        local toggled = default and true or false
+    local secondboxmain_UIStroke = Instance.new("UIStroke", secondboxmain)
+    secondboxmain_UIStroke.Color = Color3.fromRGB(43, 43, 43)
 
-        local function updateToggle(state)
-            toggled = state
-            toggleBtn.Text = toggled and "On" or "Off"
-            toggleBtn.BackgroundColor3 = toggled and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(70, 70, 70)
-            if callback then
-                pcall(callback, toggled)
-            end
-        end
+    local holder = Instance.new("Frame", secondboxmain)
+    holder.Name = "Holder"
+    holder.Size = UDim2.new(1, -8, 1, -8)
+    holder.Position = UDim2.new(0, 4, 0, 4)
+    holder.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    holder.BorderSizePixel = 0
 
-        toggleBtn.MouseButton1Click:Connect(function()
-            updateToggle(not toggled)
-        end)
+    local holder_UIStroke = Instance.new("UIStroke", holder)
+    holder_UIStroke.Color = Color3.fromRGB(43, 43, 43)
 
-        return frame, updateToggle
+    local accentstripe = Instance.new("Frame", holder)
+    accentstripe.Name = "AccentStripe"
+    accentstripe.Size = UDim2.new(1, -2, 0, 2)
+    accentstripe.Position = UDim2.new(0, 1, 0, 1)
+    accentstripe.BackgroundColor3 = Color3.fromRGB(74, 84, 122)
+    accentstripe.BorderSizePixel = 0
+
+    local holder_UIGradient = Instance.new("UIGradient", holder)
+    holder_UIGradient.Rotation = -90
+    holder_UIGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(103, 103, 103)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+
+    -- Title label
+    local Title = Instance.new("TextLabel", holder)
+    Title.Name = "Title"
+    Title.Size = UDim2.new(0, 200, 0, 50)
+    Title.Position = UDim2.new(0, -8, 0, -45)
+    Title.BackgroundTransparency = 1
+    Title.Text = "biteme.club"
+    Title.TextSize = 12
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.TextColor3 = Color3.fromRGB(140, 140, 140)
+    if typeof(self.font) == "Instance" then
+        Title.FontFace = self.font
+    else
+        Title.Font = self.font or Enum.Font.SourceSans
     end
+    Title.TextStrokeTransparency = 0
+    Title.BorderSizePixel = 0
 
-    -- Helper to create sliders
-    function menu:CreateSlider(name, minValue, maxValue, initialValue, callback)
-        local frame = Instance.new("Frame", self.holder)
-        frame.Name = "SliderHolder"
-        frame.Size = UDim2.new(1, -20, 0, 40)
-        frame.BackgroundTransparency = 1
+    self.MainAccent = MainAccent
+    self.Holder = holder
+    self.Title = Title
+    self.ScreenGui = screenGui
 
-        local label = Instance.new("TextLabel", frame)
-        label.Name = "Label"
-        label.Size = UDim2.new(0.5, 0, 0.5, 0)
-        label.BackgroundTransparency = 1
-        label.Font = self.font
-        label.Text = name or "Slider"
-        label.TextColor3 = Color3.fromRGB(200, 200, 200)
-        label.TextSize = 14
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.Position = UDim2.new(0, 5, 0, 2)
-
-        local valueLabel = Instance.new("TextLabel", frame)
-        valueLabel.Name = "ValueLabel"
-        valueLabel.Size = UDim2.new(0.25, 0, 0.5, 0)
-        valueLabel.BackgroundTransparency = 1
-        valueLabel.Font = self.font
-        valueLabel.Position = UDim2.new(0.75, 0, 0, 2)
-        valueLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-        valueLabel.TextSize = 14
-        valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-        valueLabel.Text = tostring(initialValue or minValue)
-
-        local sliderBar = Instance.new("Frame", frame)
-        sliderBar.Name = "SliderBar"
-        sliderBar.Size = UDim2.new(0.9, -10, 0, 10)
-        sliderBar.Position = UDim2.new(0, 5, 0.6, 0)
-        sliderBar.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        sliderBar.BorderSizePixel = 0
-        sliderBar.ClipsDescendants = true
-
-        local fill = Instance.new("Frame", sliderBar)
-        fill.Name = "Fill"
-        fill.Size = UDim2.new(0, 0, 1, 0)
-        fill.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
-        fill.BorderSizePixel = 0
-
-        local dragging = false
-        local minVal = minValue or 0
-        local maxVal = maxValue or 100
-        local value = initialValue or minVal
-
-        local function setValue(newVal)
-            value = math.clamp(newVal, minVal, maxVal)
-            local percent = (value - minVal) / (maxVal - minVal)
-            fill.Size = UDim2.new(percent, 0, 1, 0)
-            valueLabel.Text = string.format("%.2f", value)
-            if callback then
-                pcall(callback, value)
-            end
-        end
-
-        setValue(value)
-
-        sliderBar.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-                local relativeX = input.Position.X - sliderBar.AbsolutePosition.X
-                local sliderWidth = sliderBar.AbsoluteSize.X
-                local percent = math.clamp(relativeX / sliderWidth, 0, 1)
-                setValue(minVal + percent * (maxVal - minVal))
-            end
-        end)
-
-        sliderBar.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
-        end)
-
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local relativeX = input.Position.X - sliderBar.AbsolutePosition.X
-                local sliderWidth = sliderBar.AbsoluteSize.X
-                local percent = math.clamp(relativeX / sliderWidth, 0, 1)
-                setValue(minVal + percent * (maxVal - minVal))
-            end
-        end)
-
-        return frame, setValue
-    end
-
-    return menu
+    -- UIListLayout for stacking toggles/sliders vertically
+    local UIListLayout = Instance.new("UIListLayout", holder)
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Padding = UDim.new(0, 5)
+    
+    return screenGui, holder
 end
 
-return ui
+function UI:SetFont(fontValue)
+    self.font = fontValue
+    -- Update title font immediately
+    if self.Title then
+        if typeof(fontValue) == "Instance" and fontValue.ClassName == "Font" then
+            self.Title.FontFace = fontValue
+        else
+            self.Title.Font = fontValue
+        end
+    end
+end
+
+function UI:CreateToggle(text, defaultState, callback)
+    assert(typeof(text) == "string", "Toggle requires a string name.")
+    local holder = self.Holder or error("Call Init() first.")
+    
+    local toggleHolder = Instance.new("Frame")
+    toggleHolder.Name = "ToggleHolder"
+    toggleHolder.Size = UDim2.new(1, -10, 0, 26)
+    toggleHolder.BackgroundTransparency = 1
+    toggleHolder.BorderSizePixel = 0
+    toggleHolder.LayoutOrder = (#holder:GetChildren()) -- automatic layout order
+    
+    toggleHolder.Parent = holder
+
+    local toggleLabel = Instance.new("TextLabel", toggleHolder)
+    toggleLabel.Name = "ToggleName"
+    toggleLabel.Size = UDim2.new(1, -36, 1, 0)
+    toggleLabel.Position = UDim2.new(0, 6, 0, 0)
+    toggleLabel.BackgroundTransparency = 1
+    toggleLabel.Font = Enum.Font.SourceSans -- fallback font
+    if typeof(self.font) == "Instance" and self.font.ClassName == "Font" then
+        toggleLabel.FontFace = self.font
+    else
+        toggleLabel.Font = self.font or Enum.Font.SourceSans
+    end
+    toggleLabel.Text = text
+    toggleLabel.TextColor3 = Color3.fromRGB(140, 140, 140)
+    toggleLabel.TextSize = 14
+    toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    local toggleButton = Instance.new("Frame", toggleHolder)
+    toggleButton.Name = "ToggleButton"
+    toggleButton.Size = UDim2.new(0, 20, 0, 20)
+    toggleButton.Position = UDim2.new(1, -26, 0, 3)
+    toggleButton.BackgroundColor3 = defaultState and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(44, 44, 44)
+    toggleButton.BorderSizePixel = 0
+
+    local UIGradient = Instance.new("UIGradient", toggleButton)
+    UIGradient.Rotation = -90
+    UIGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+    
+    local toggled = defaultState or false
+
+    local function updateState(state)
+        toggled = state
+        toggleButton.BackgroundColor3 = toggled and Color3.fromRGB(59, 59, 95) or Color3.fromRGB(44, 44, 44)
+        if callback then
+            pcall(callback, toggled)
+        end
+    end
+
+    toggleButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            updateState(not toggled)
+        end
+    end)
+
+    return toggleHolder, updateState
+end
+
+function UI:CreateSlider(minVal, maxVal, initialVal, callback)
+    local holder = self.Holder or error("Call Init() first.")
+
+    local sliderHolder = Instance.new("Frame")
+    sliderHolder.Name = "SliderHolder"
+    sliderHolder.Size = UDim2.new(1, -10, 0, 30)
+    sliderHolder.BackgroundTransparency = 1
+    sliderHolder.BorderSizePixel = 0
+    sliderHolder.LayoutOrder = (#holder:GetChildren())
+
+    sliderHolder.Parent = holder
+
+    local infoLabel = Instance.new("TextLabel", sliderHolder)
+    infoLabel.Name = "ValueInfo"
+    infoLabel.Size = UDim2.new(0, 40, 1, 0)
+    infoLabel.Position = UDim2.new(0, 0, 0, 0)
+    infoLabel.BackgroundTransparency = 1
+    infoLabel.BorderSizePixel = 0
+    infoLabel.TextSize = 12
+    if typeof(self.font) == "Instance" and self.font.ClassName == "Font" then
+        infoLabel.FontFace = self.font
+    else
+        infoLabel.Font = self.font or Enum.Font.SourceSans
+    end
+    infoLabel.TextColor3 = Color3.fromRGB(173, 173, 173)
+    infoLabel.Text = tostring(initialVal)
+    infoLabel.TextXAlignment = Enum.TextXAlignment.Left
+    infoLabel.TextYAlignment = Enum.TextYAlignment.Center
+
+    local barBack = Instance.new("Frame", sliderHolder)
+    barBack.Name = "BarBack"
+    barBack.Size = UDim2.new(1, -50, 0, 10)
+    barBack.Position = UDim2.new(0, 50, 0, 10)
+    barBack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+    barBack.BorderSizePixel = 0
+
+    local bgGradient = Instance.new("UIGradient", barBack)
+    bgGradient.Rotation = -90
+    bgGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+
+    local sliderFill = Instance.new("Frame", barBack)
+    sliderFill.Name = "SliderFill"
+    sliderFill.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
+    sliderFill.BorderSizePixel = 0
+
+    local fillGradient = Instance.new("UIGradient", sliderFill)
+    fillGradient.Rotation = -90
+    fillGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(174, 174, 174)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    }
+
+    local function percentFromValue(val)
+        return (val - minVal) / (maxVal - minVal)
+    end
+
+    local dragging = false
+    local currentValue = initialVal or minVal
+    local function setValue(val)
+        val = math.clamp(val, minVal, maxVal)
+        currentValue = val
+        local pct = percentFromValue(val)
+        sliderFill.Size = UDim2.new(pct, 0, 1, 0)
+        infoLabel.Text = string.format("%.2f", val)
+        if callback then
+            pcall(callback, val)
+        end
+    end
+
+    local function updateSlider(mouseX)
+        local posX = mouseX - barBack.AbsolutePosition.X
+        posX = math.clamp(posX, 0, barBack.AbsoluteSize.X)
+        local percent = posX / barBack.AbsoluteSize.X
+        local val = minVal + percent * (maxVal - minVal)
+        setValue(val)
+    end
+
+    barBack.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateSlider(input.Position.X)
+        end
+    end)
+
+    barBack.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input.Position.X)
+        end
+    end)
+
+    -- Initialize slider fill bar size and label
+    setValue(currentValue)
+
+    return sliderHolder, setValue
+end
+
+-- Initialize UI library
+function UI:Init(fontUrl)
+    self:SetupFont(fontUrl)
+    return self:CreateMainContainer()
+end
+
+-- Return UI table as module
+return setmetatable(UI, UI)
