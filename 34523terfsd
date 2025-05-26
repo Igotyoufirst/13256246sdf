@@ -1,301 +1,472 @@
-local HttpService = game:GetService("HttpService")
-
-local RageUI = {}
-
--- Handle font setup
--- Loads font from GitHub raw URL, writes font file and font face configuration
-function RageUI:SetupFont()
-    local fontFileName = "smallest_pixel.ttf"
-    local fontFaceName = "fontface.font"
-
-    if not pcall(function() return readfile(fontFileName) end) then
-        writefile(fontFileName, game:HttpGet("https://github.com/f1nobe7650/Nebula/raw/main/fs-tahoma-8px.ttf"))
-    end
-
-    -- Define font face data using standard Weight and Style for Roblox fonts
-    local fontFaceData = {
+local UiLib = {}
+UiLib.__index = UiLib
+do
+    writefile("smallest_pixel.ttf", game:HttpGet("https://github.com/f1nobe7650/Nebula/raw/refs/heads/main/fs-tahoma-8px.ttf"))
+    local smallest_pixel = {
         name = "SmallestPixel7",
         faces = {
             {
                 name = "Regular",
-                weight = Enum.FontWeight.Regular.Value,
-                style = Enum.FontStyle.Normal.Name,
-                assetId = getcustomasset(fontFileName)
+                weight = Enum.FontWeight.Light,
+                style = Enum.FontStyle.Normal,
+                assetId = getcustomasset("smallest_pixel.ttf")
             }
         }
     }
-
-    if not pcall(function() return readfile(fontFaceName) end) then
-        writefile(fontFaceName, HttpService:JSONEncode(fontFaceData))
-    end
-
-    self.font = Font.new(getcustomasset(fontFaceName), Enum.FontWeight.Light)
-
-    return self.font
+    writefile("fontface.font", game:GetService("HttpService"):JSONEncode(smallest_pixel))
+    UiLib.font = Font.new(getcustomasset("fontface.font"), Enum.FontWeight.Light)
 end
 
+local function CreateGradient(parent, rotation, color1, color2)
+    local grad = Instance.new("UIGradient", parent)
+    grad.Rotation = rotation or -90
+    grad.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, color1),
+        ColorSequenceKeypoint.new(1, color2)
+    }
+    return grad
+end
 
--- Create the main RageUI container Frame (ScreenGui)
-function RageUI:CreateMainContainer()
-    local ragebot = Instance.new("ScreenGui")
-    ragebot.Name = "RageUI"
-    ragebot.ResetOnSpawn = false
-    ragebot.ZIndexBehavior = Enum.ZIndexBehavior.Sibling -- keep zindex sane
+function UiLib.new()
+    local self = setmetatable({}, UiLib)
 
-    -- Main Accent Frame
-    local MainAccent = Instance.new("Frame", ragebot)
-    MainAccent.Name = "MainAccent"
+    local CoreGui = game:GetService("CoreGui")
+
+    local ScreenGui = Instance.new("ScreenGui", CoreGui)
+    ScreenGui.Name = "ragebot"
+    self.ScreenGui = ScreenGui
+
+    local MainAccent = Instance.new("Frame", ScreenGui)
+    MainAccent.Name = "Main accent"
+    MainAccent.BorderSizePixel = 0
+    MainAccent.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
+    MainAccent.BorderColor3 = Color3.fromRGB(0, 0, 0)
     MainAccent.AnchorPoint = Vector2.new(0.5, 0.5)
     MainAccent.Size = UDim2.new(0, 201, 0, 135)
     MainAccent.Position = UDim2.new(0.5, 0, 0.5, 0)
-    MainAccent.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
-    MainAccent.BorderSizePixel = 0
-
-    local MainAccent_UIStroke = Instance.new("UIStroke", MainAccent)
-    MainAccent_UIStroke.Color = Color3.fromRGB(0, 0, 0)
-
-    local secondmain = Instance.new("Frame", MainAccent)
-    secondmain.Name = "SecondMain"
-    secondmain.Size = UDim2.new(1, -2, 1, -2)
-    secondmain.Position = UDim2.new(0, 1, 0, 1)
-    secondmain.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
-    secondmain.BorderSizePixel = 0
-
-    -- Box main and nested frames to match your style
-    local boxmain = Instance.new("Frame", secondmain)
-    boxmain.Name = "BoxMain"
-    boxmain.Size = UDim2.new(1, -8, 1, -24)
-    boxmain.Position = UDim2.new(0, 4, 0, 20)
-    boxmain.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    boxmain.BorderSizePixel = 0
-
-    local boxmain_UIStroke = Instance.new("UIStroke", boxmain)
-    boxmain_UIStroke.Color = Color3.fromRGB(43, 43, 43)
-
-    local secondboxmain = Instance.new("Frame", boxmain)
-    secondboxmain.Name = "SecondBoxMain"
-    secondboxmain.Size = UDim2.new(1, -10, 1, -10)
-    secondboxmain.Position = UDim2.new(0, 5, 0, 5)
-    secondboxmain.BackgroundColor3 = Color3.fromRGB(23, 23, 23)
-    secondboxmain.BorderSizePixel = 0
-
-    local secondboxmain_UIStroke = Instance.new("UIStroke", secondboxmain)
-    secondboxmain_UIStroke.Color = Color3.fromRGB(43, 43, 43)
-
-    local holder = Instance.new("Frame", secondboxmain)
-    holder.Name = "Holder"
-    holder.Size = UDim2.new(1, -8, 1, -8)
-    holder.Position = UDim2.new(0, 4, 0, 4)
-    holder.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    holder.BorderSizePixel = 0
-
-    local holder_UIStroke = Instance.new("UIStroke", holder)
-    holder_UIStroke.Color = Color3.fromRGB(43, 43, 43)
-
-    local accentstripe = Instance.new("Frame", holder)
-    accentstripe.Name = "AccentStripe"
-    accentstripe.Size = UDim2.new(1, -2, 0, 2)
-    accentstripe.Position = UDim2.new(0, 1, 0, 1)
-    accentstripe.BackgroundColor3 = Color3.fromRGB(74, 84, 122)
-    accentstripe.BorderSizePixel = 0
-
-    local holder_UIGradient = Instance.new("UIGradient", holder)
-    holder_UIGradient.Rotation = -90
-    holder_UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(103, 103, 103)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
-    }
-
-    -- Title label
-    local Title = Instance.new("TextLabel", holder)
-    Title.Name = "Title"
-    Title.Size = UDim2.new(0, 200, 0, 50)
-    Title.Position = UDim2.new(0, -8, 0, -45)
-    Title.BackgroundTransparency = 1
-    Title.Text = "biteme.club"
-    Title.TextSize = 12
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.TextColor3 = Color3.fromRGB(140, 140, 140)
-    Title.FontFace = self.font -- set your font
-    Title.TextStrokeTransparency = 0
-    Title.BorderSizePixel = 0
-
+    Instance.new("UIStroke", MainAccent)
     self.MainAccent = MainAccent
-    self.Holder = holder
-    self.RageUI = ragebot
 
-    return ragebot, holder
-end
+    local TweenService = game:GetService("TweenService")
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad)
+    local defaultColor = Color3.fromRGB(59, 59, 95)
+    local hoverColor = Color3.fromRGB(99, 99, 135)
 
-
--- Create a Toggle control in a parent frame; returns the toggle Frame and a function to set state
--- Params: parent frame, initial state (bool), callback function(state)
-function RageUI:CreateToggle(parent, initialState, callback)
-    local toggleholder = Instance.new("Frame", parent)
-    toggleholder.Name = "ToggleHolder"
-    toggleholder.BorderSizePixel = 0
-    toggleholder.BackgroundTransparency = 1
-    toggleholder.Size = UDim2.new(0, 120, 0, 20)
-
-    local toggleFrame = Instance.new("Frame", toggleholder)
-    toggleFrame.Name = "ToggleFrame"
-    toggleFrame.BorderSizePixel = 0
-    toggleFrame.BackgroundColor3 = initialState and Color3.fromRGB(59,59,95) or Color3.fromRGB(44,44,44)
-    toggleFrame.Size = UDim2.new(0, 20, 0, 20)
-    toggleFrame.Position = UDim2.new(0, 0, 0, 0)
-
-    local toggleInfo = Instance.new("TextLabel", toggleFrame)
-    toggleInfo.Name = "Info"
-    toggleInfo.Text = initialState and "Toggled On" or "Toggled Off"
-    toggleInfo.TextSize = 12
-    toggleInfo.FontFace = self.font
-    toggleInfo.TextColor3 = Color3.fromRGB(173, 173, 173)
-    toggleInfo.BackgroundTransparency = 1
-    toggleInfo.BorderSizePixel = 0
-    toggleInfo.Size = UDim2.new(1, 100, 1, 0)
-    toggleInfo.Position = UDim2.new(1, 5, 0, 0)
-    toggleInfo.TextXAlignment = Enum.TextXAlignment.Left
-
-    local UIGradient = Instance.new("UIGradient", toggleFrame)
-    UIGradient.Rotation = -90
-    UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(174,174,174)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
-    }
-
-    local toggled = initialState
-
-    local function UpdateToggle(state)
-        toggled = state
-        if toggled then
-            toggleFrame.BackgroundColor3 = Color3.fromRGB(59,59,95)
-            toggleInfo.Text = "Toggled On"
-        else
-            toggleFrame.BackgroundColor3 = Color3.fromRGB(44,44,44)
-            toggleInfo.Text = "Toggled Off"
-        end
-        if callback then
-            callback(toggled)
-        end
-    end
-
-    toggleFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            UpdateToggle(not toggled)
-        end
+    MainAccent.MouseEnter:Connect(function()
+        TweenService:Create(MainAccent, tweenInfo, {BackgroundColor3 = hoverColor}):Play()
     end)
 
-    -- Return the toggle instance and function to set toggle programmatically
-    return toggleholder, UpdateToggle
-end
+    MainAccent.MouseLeave:Connect(function()
+        TweenService:Create(MainAccent, tweenInfo, {BackgroundColor3 = defaultColor}):Play()
+    end)
 
+    local TitleBar = Instance.new("Frame", MainAccent)
+    TitleBar.Name = "TitleBar"
+    TitleBar.Size = UDim2.new(1, 0, 0, 30)
+    TitleBar.Position = UDim2.new(0, 0, 0, 0)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Transparency = 1
 
--- Create a Slider control in a parent frame
--- Params: parent frame, minValue, maxValue, initialValue, callback(value)
-function RageUI:CreateSlider(parent, minVal, maxVal, initialVal, callback)
-    local sliderHolder = Instance.new("Frame", parent)
-    sliderHolder.Name = "SliderHolder"
-    sliderHolder.Size = UDim2.new(1, 0, 0, 30)
-    sliderHolder.BackgroundTransparency = 1
-    sliderHolder.BorderSizePixel = 0
-
-    local barBack = Instance.new("Frame", sliderHolder)
-    barBack.Name = "BarBack"
-    barBack.Size = UDim2.new(1, -40, 0, 10)
-    barBack.Position = UDim2.new(0, 20, 0, 10)
-    barBack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-    barBack.BorderSizePixel = 0
-
-    local bgGradient = Instance.new("UIGradient", barBack)
-    bgGradient.Rotation = -90
-    bgGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(174,174,174)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
-    }
-
-    local sliderFill = Instance.new("Frame", barBack)
-    sliderFill.Name = "SliderFill"
-    sliderFill.Size = UDim2.new((initialVal - minVal)/(maxVal - minVal), 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
-    sliderFill.BorderSizePixel = 0
-
-    local fillGradient = Instance.new("UIGradient", sliderFill)
-    fillGradient.Rotation = -90
-    fillGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(174,174,174)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
-    }
-
-    local infoLabel = Instance.new("TextLabel", sliderHolder)
-    infoLabel.Name = "ValueInfo"
-    infoLabel.Size = UDim2.new(0, 40, 1, 0)
-    infoLabel.Position = UDim2.new(0, 0, 0, 0)
-    infoLabel.BackgroundTransparency = 1
-    infoLabel.TextSize = 12
-    infoLabel.FontFace = self.font
-    infoLabel.TextColor3 = Color3.fromRGB(173,173,173)
-    infoLabel.BorderSizePixel = 0
-    infoLabel.Text = tostring(initialVal)
-    infoLabel.TextXAlignment = Enum.TextXAlignment.Left
-    infoLabel.TextYAlignment = Enum.TextYAlignment.Center
+    local UserInputService = game:GetService("UserInputService")
+    local TweenService = game:GetService("TweenService")
 
     local dragging = false
-    local currentValue = initialVal
+    local dragInput
+    local dragStart
+    local startPos
+    local currentTween
 
-    local function updateSlider(inputPosX)
-        local relativeX = inputPosX - barBack.AbsolutePosition.X
-        relativeX = math.clamp(relativeX, 0, barBack.AbsoluteSize.X)
-        local percent = relativeX / barBack.AbsoluteSize.X
-        local value = minVal + percent * (maxVal - minVal)
-        value = math.clamp(value, minVal, maxVal)
-        currentValue = value
-
-        sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-        infoLabel.Text = string.format("%.2f", value)
-
-        if callback then
-            callback(value)
-        end
-    end
-
-    barBack.InputBegan:Connect(function(input)
+    TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            updateSlider(input.Position.X)
+            dragStart = input.Position
+            startPos = MainAccent.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
     end)
 
-    barBack.InputEnded:Connect(function(input)
+    TitleBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            if currentTween then currentTween:Cancel() end
+            
+            local delta = input.Position - dragStart
+            local targetPosition = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+            currentTween = TweenService:Create(MainAccent, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Position = targetPosition})
+            currentTween:Play()
+        end
+    end)
+
+    local secondmain = Instance.new("Frame", MainAccent)
+    secondmain.Name = "secondmain"
+    secondmain.BorderSizePixel = 0
+    secondmain.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+    secondmain.Size = UDim2.new(1, -2, 1, -2)
+    secondmain.Position = UDim2.new(0, 1, 0, 1)
+    secondmain.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    self.SecondMain = secondmain
+
+    local boxmain = Instance.new("Frame", secondmain)
+    boxmain.Name = "box main"
+    boxmain.BorderSizePixel = 0
+    boxmain.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    boxmain.Size = UDim2.new(1, -8, 1, -24)
+    boxmain.Position = UDim2.new(0, 4, 0, 20)
+    boxmain.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    self.BoxMain = boxmain
+    local boxStroke = Instance.new("UIStroke", boxmain)
+    boxStroke.Color = Color3.fromRGB(43, 43, 43)
+
+    local secondboxmain = Instance.new("Frame", boxmain)
+    secondboxmain.Name = "second box main"
+    secondboxmain.BorderSizePixel = 0
+    secondboxmain.BackgroundColor3 = Color3.fromRGB(23, 23, 23)
+    secondboxmain.Size = UDim2.new(1, -10, 1, -10)
+    secondboxmain.Position = UDim2.new(0, 5, 0, 5)
+    secondboxmain.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    self.SecondBoxMain = secondboxmain
+    local secondBoxStroke = Instance.new("UIStroke", secondboxmain)
+    secondBoxStroke.Color = Color3.fromRGB(43, 43, 43)
+
+    local holder = Instance.new("Frame", secondboxmain)
+    holder.Name = "holder"
+    holder.BorderSizePixel = 0
+    holder.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    holder.Size = UDim2.new(1, -8, 1, -8)
+    holder.Position = UDim2.new(0, 4, 0, 4)
+    holder.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    self.Holder = holder
+    local holderStroke = Instance.new("UIStroke", holder)
+    holderStroke.Color = Color3.fromRGB(43, 43, 43)
+    CreateGradient(holder, -90, Color3.fromRGB(103, 103, 103), Color3.fromRGB(255, 255, 255))
+
+    local accentstripe = Instance.new("Frame", holder)
+    accentstripe.Name = "accent stripe"
+    accentstripe.BackgroundColor3 = Color3.fromRGB(74, 84, 122)
+    accentstripe.Size = UDim2.new(1, -2, 0, 2)
+    accentstripe.Position = UDim2.new(0, 1, 0, 1)
+    accentstripe.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    accentstripe.BorderSizePixel = 0
+    CreateGradient(accentstripe, -90, Color3.fromRGB(174, 174, 174), Color3.fromRGB(255, 255, 255))
+
+    local Title = Instance.new("TextLabel", holder)
+    Title.Name = "Title"
+    Title.Text = "biteme.club"
+    Title.FontFace = UiLib.font
+    Title.TextSize = 12
+    Title.TextColor3 = Color3.fromRGB(140, 140, 140)
+    Title.TextStrokeTransparency = 0
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, -8, 0, -45)
+    Title.Size = UDim2.new(0, 200, 0, 50)
+    Title.BorderSizePixel = 0
+    Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    self.Title = Title
+
+    local X = Instance.new("TextLabel", holder)
+    X.Name = "X"
+    X.Text = "X"
+    X.FontFace = UiLib.font
+    X.TextSize = 12
+    X.TextColor3 = Color3.fromRGB(140, 140, 140)
+    X.TextStrokeTransparency = 0
+    X.TextXAlignment = Enum.TextXAlignment.Right
+    X.BackgroundTransparency = 1
+    X.Position = UDim2.new(0, 170, 0, -25)
+    X.Size = UDim2.new(0, 10, 0, 10)
+    X.BorderSizePixel = 0
+    X.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    self.X = X
+
+    local TweenService = game:GetService("TweenService")
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad)
+
+    X.MouseEnter:Connect(function() TweenService:Create(X, tweenInfo, {TextColor3 = Color3.fromRGB(173, 0, 0)}):Play() end)
+
+    X.MouseLeave:Connect(function() TweenService:Create(X, tweenInfo, {TextColor3 = Color3.fromRGB(140, 140, 140)}):Play() end)
+
+    X.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then self.ScreenGui:Destroy() end end)
+
+    local contentHolder = Instance.new("Frame", holder)
+    contentHolder.Name = "ContentHolder"
+    contentHolder.BackgroundTransparency = 1
+    contentHolder.Size = UDim2.new(1, 0, 1, 0)
+    contentHolder.BorderSizePixel = 0
+    self.ContentHolder = contentHolder
+    local listLayout = Instance.new("UIListLayout", contentHolder)
+    listLayout.Padding = UDim.new(0, 10)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    self.ListLayout = listLayout
+
+    local dropShadowHolder = Instance.new("Frame", MainAccent)
+    dropShadowHolder.Name = "DropShadowHolder"
+    dropShadowHolder.ZIndex = 0
+    dropShadowHolder.BorderSizePixel = 0
+    dropShadowHolder.BackgroundTransparency = 1
+    dropShadowHolder.Size = UDim2.new(1, 0, 1, 0)
+    self.DropShadowHolder = dropShadowHolder
+
+    local dropShadow = Instance.new("ImageLabel", dropShadowHolder)
+    dropShadow.Name = "DropShadow"
+    dropShadow.ZIndex = 0
+    dropShadow.BorderSizePixel = 0
+    dropShadow.SliceCenter = Rect.new(49, 49, 450, 450)
+    dropShadow.ScaleType = Enum.ScaleType.Slice
+    dropShadow.ImageTransparency = 0.5
+    dropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    dropShadow.AnchorPoint = Vector2.new(0.5, 0.5)
+    dropShadow.BackgroundTransparency = 1
+    dropShadow.Image = "rbxassetid://6015897843"
+    dropShadow.Size = UDim2.new(1, 47, 1, 47)
+    dropShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+    self.DropShadow = dropShadow
+
+    self.toggles = {}
+    self.sliders = {}
+
+    return self
+end
+
+
+function UiLib:CreateToggle(labelText, initialState, callback)
+    local TweenService = game:GetService("TweenService")
+    local darkColor = Color3.fromRGB(140, 140, 140)
+    local lightColor = Color3.fromRGB(173, 173, 173)
+    local accentColor = Color3.fromRGB(59, 59, 95)
+    local defaultColor = Color3.fromRGB(44, 44, 44)
+    local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad)
+
+    local holder = self.ContentHolder
+
+    local toggleHolder = Instance.new("Frame", holder)
+    toggleHolder.Name = "toggleholder"
+    toggleHolder.BackgroundTransparency = 1
+    toggleHolder.Size = UDim2.new(1, 0, 0, 20)
+    toggleHolder.BorderSizePixel = 0
+
+    local toggleBox = Instance.new("Frame", toggleHolder)
+    toggleBox.Name = "ToggleBox"
+    toggleBox.Size = UDim2.new(0, 10, 0, 10)
+    toggleBox.Position = UDim2.new(0, 10, 0, 10)
+    toggleBox.BorderSizePixel = 0
+    toggleBox.BackgroundColor3 = initialState and accentColor or defaultColor
+    CreateGradient(toggleBox, -90, Color3.fromRGB(174, 174, 174), Color3.fromRGB(255, 255, 255))
+    Instance.new("UIStroke", toggleBox).Color = Color3.fromRGB(20, 20, 20)
+
+    local label = Instance.new("TextLabel", toggleHolder)
+    label.Name = "Label"
+    label.Text = labelText or "Toggle"
+    label.Position = UDim2.new(0, 25, 0, 9)
+    label.Size = UDim2.new(1, -30, 1, -10)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = initialState and lightColor or darkColor
+    label.FontFace = UiLib.font
+    label.TextSize = 12
+    label.TextStrokeTransparency = 0
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BorderSizePixel = 0
+
+    local toggled = initialState and true or false
+
+    toggleHolder.MouseEnter:Connect(function() TweenService:Create(label, tweenInfo, {TextColor3 = lightColor}):Play() end)
+
+    toggleHolder.MouseLeave:Connect(function() if not toggled then TweenService:Create(label, tweenInfo, {TextColor3 = darkColor}):Play() end end)
+
+    toggleHolder.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            toggled = not toggled
+            TweenService:Create(toggleBox, tweenInfo, {BackgroundColor3 = toggled and accentColor or defaultColor}):Play()
+            TweenService:Create(label, tweenInfo, {TextColor3 = toggled and lightColor or darkColor}):Play()
+            if callback then
+                pcall(callback, toggled)
+            end
+        end
+    end)
+
+    local toggleObj = {
+        Holder = toggleHolder,
+        ToggleBox = toggleBox,
+        Label = label,
+        GetState = function()
+            return toggled
+        end,
+        SetState = function(state)
+            toggled = state and true or false
+            TweenService:Create(toggleBox, tweenInfo, {BackgroundColor3 = toggled and accentColor or defaultColor}):Play()
+            TweenService:Create(label, tweenInfo, {TextColor3 = toggled and lightColor or darkColor}):Play()
+            if callback then
+                pcall(callback, toggled)
+            end
+        end,
+    }
+
+    table.insert(self.toggles, toggleObj)
+    return toggleObj
+end
+
+
+function UiLib:CreateSlider(labelText, min, max, step, initialValue, callback)
+    min = min or 0
+    max = max or 100
+    step = step or 1
+    initialValue = initialValue or min
+    initialValue = math.clamp(initialValue, min, max)
+
+    local TweenService = game:GetService("TweenService")
+    local darkColor = Color3.fromRGB(140, 140, 140)
+    local lightColor = Color3.fromRGB(173, 173, 173)
+    local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad)
+    local slideTweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad)
+
+    local holder = self.ContentHolder
+
+    local sliderHolder = Instance.new("Frame", holder)
+    sliderHolder.Name = "sliderholder"
+    sliderHolder.BackgroundTransparency = 1
+    sliderHolder.Size = UDim2.new(1, 0, 0, 10)
+    sliderHolder.Position = UDim2.new(0, 5, 0, 0)
+    sliderHolder.BorderSizePixel = 0
+
+    local label = Instance.new("TextLabel", sliderHolder)
+    label.Name = "Label"
+    label.Text = labelText or "Slider"
+    label.Position = UDim2.new(0, 15, 0, -3)
+    label.Size = UDim2.new(1, -10, 0, 15)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = darkColor
+    label.FontFace = UiLib.font
+    label.TextSize = 12
+    label.TextStrokeTransparency = 0
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BorderSizePixel = 0
+    label.ZIndex = 3
+
+    local sliderBg = Instance.new("Frame", sliderHolder)
+    sliderBg.Name = "sliderbg"
+    sliderBg.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+    sliderBg.Position = UDim2.new(0, 10, 0, 0)
+    sliderBg.Size = UDim2.new(1, -20, 0, 10)
+    sliderBg.BorderSizePixel = 0
+    sliderBg.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    CreateGradient(sliderBg, -90, Color3.fromRGB(174, 174, 174), Color3.fromRGB(255, 255, 255))
+
+    local sliderFill = Instance.new("Frame", sliderBg)
+    sliderFill.Name = "sliderFill"
+    sliderFill.BackgroundColor3 = Color3.fromRGB(59, 59, 95)
+    sliderFill.BorderSizePixel = 0
+    sliderFill.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    sliderFill.Size = UDim2.new((initialValue - min) / (max - min), 0, 1, 0)
+    CreateGradient(sliderFill, -90, Color3.fromRGB(144, 144, 144), Color3.fromRGB(255, 255, 255))
+    Instance.new("UIStroke", sliderFill).Color = Color3.fromRGB(20, 20, 20)
+
+    local sliderValue = Instance.new("TextLabel", sliderBg)
+    sliderValue.Name = "SliderValue"
+    sliderValue.Text = tostring(initialValue)
+    sliderValue.Position = UDim2.new(0, 1, 0, -1)
+    sliderValue.Size = UDim2.new(1, -5, 1, 0)
+    sliderValue.BackgroundTransparency = 1
+    sliderValue.TextXAlignment = Enum.TextXAlignment.Right
+    sliderValue.TextColor3 = darkColor
+    sliderValue.FontFace = UiLib.font
+    sliderValue.TextSize = 12
+    sliderValue.TextStrokeTransparency = 0
+    sliderValue.BorderSizePixel = 0
+
+    sliderBg.MouseEnter:Connect(function()
+        TweenService:Create(label, tweenInfo, {TextColor3 = lightColor}):Play()
+        TweenService:Create(sliderValue, tweenInfo, {TextColor3 = lightColor}):Play()
+    end)
+
+    sliderBg.MouseLeave:Connect(function()
+        TweenService:Create(label, tweenInfo, {TextColor3 = darkColor}):Play()
+        TweenService:Create(sliderValue, tweenInfo, {TextColor3 = darkColor}):Play()
+    end)
+
+    local UserInputService = game:GetService("UserInputService")
+    local dragging = false
+    local value = initialValue
+
+    local function updateValueFromX(x)
+        local absPos = sliderBg.AbsolutePosition
+        local absSize = sliderBg.AbsoluteSize
+        local relativeX = x - absPos.X
+        relativeX = math.clamp(relativeX, 0, absSize.X)
+
+        local percent = relativeX / absSize.X
+        local newValue = min + (max - min) * percent
+        newValue = math.floor(newValue / step + 0.5) * step
+        newValue = math.clamp(newValue, min, max)
+        value = newValue
+
+        local targetSize = UDim2.new((value - min) / (max - min), 0, 1, 0)
+        TweenService:Create(sliderFill, slideTweenInfo, {Size = targetSize}):Play()
+        sliderValue.Text = tostring(value)
+
+        if callback then
+            pcall(callback, value)
+        end
+    end
+
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateValueFromX(input.Position.X)
+        end
+    end)
+
+    sliderBg.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
 
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
+    UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateSlider(input.Position.X)
+            updateValueFromX(input.Position.X)
         end
     end)
 
-    -- Programmatically set slider value function
-    local function setValue(value)
-        value = math.clamp(value, minVal, maxVal)
-        currentValue = value
-        local percent = (value - minVal) / (maxVal - minVal)
-        sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-        infoLabel.Text = string.format("%.2f", value)
-    end
+    local sliderObj = {
+        Holder = sliderHolder,
+        Label = label,
+        ValueText = sliderValue,
+        Fill = sliderFill,
+        GetValue = function()
+            return value
+        end,
+        SetValue = function(newValue)
+            value = math.clamp(newValue, min, max)
+            local targetSize = UDim2.new((value - min) / (max - min), 0, 1, 0)
+            TweenService:Create(sliderFill, slideTweenInfo, {Size = targetSize}):Play()
+            sliderValue.Text = tostring(value)
+            if callback then
+                pcall(callback, value)
+            end
+        end,
+        Min = min,
+        Max = max,
+        Step = step,
+    }
 
-    return sliderHolder, setValue
+    table.insert(self.sliders, sliderObj)
+    return sliderObj
 end
 
-
--- Initialize library (load font and create main container)
-function RageUI:Init()
-    self:SetupFont()
-    local screenGui, holder = self:CreateMainContainer()
-    return screenGui, holder
-end
-
-
-return RageUI
+return UiLib
